@@ -5,7 +5,7 @@ import path from 'path'
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 const prompt = [
   {
-    name: 'secretmanager_key',
+    name: 'key',
     type: 'input',
     message: 'AWS Secretsmanager Key를 입력해주세요.',
     validate: (value) => {
@@ -14,14 +14,24 @@ const prompt = [
     }
   },
   {
-    name: 'env_path',
+    name: 'region',
+    type: 'input',
+    message: 'AWS Secretsmanager의 Region을 입력해주세요.',
+    default: 'ap-northeast-2',
+    validate: (value) => {
+      if (value.length) return true
+      return 'AWS Secretsmanager의 Region을 입력해주세요.'
+    }
+  },
+  {
+    name: 'path',
     type: 'input',
     message: 'Local에 저장될 env file의 path를 입력해주세요.',
+    default: '.env',
     validate: (value) => {
       if (value.length) return true
       return 'Local에 저장될 env file의 path를 입력해주세요.'
-    },
-    default: '.env'
+    }
   }
 ]
 
@@ -33,10 +43,10 @@ const init = async () => {
       fs.readFileSync(syncEnvFilePath, 'utf8')
     )
     const existingConfig = existingConfigs.find(
-      (config) => config.secretmanager_key === answers.secretmanager_key
+      (config) => config.key === answers.key
     )
     if (existingConfig) {
-      if (existingConfig.env_path === answers.env_path) {
+      if (existingConfig.path === answers.path) {
         console.log('이미 동일한 설정이 존재합니다.')
         return
       } else {
@@ -44,7 +54,7 @@ const init = async () => {
           name: 'confirm',
           type: 'confirm',
           message:
-            '같은 key가 존재하지만 env_path가 다릅니다. 추가하시겠습니까?'
+            '같은 key가 존재하지만 path가 다릅니다. 추가하시겠습니까?'
         })
         if (!confirm) return
       }

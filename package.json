@@ -30,6 +30,7 @@
     "vitest": "^1.6.0"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.600.0",
     "commander": "^12.1.0",
     "inquirer": "^9.3.1"
   }

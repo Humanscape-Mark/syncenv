@@ -39,7 +39,17 @@ const sync = async (options) => {
       continue
     }
 
-    if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
+    let envFile
+
+    try {
+      envFile = fs.accessSync(path, fs.constants.F_OK)
+    } catch (e) { }
+
+    if (!envFile) {
+      if (verbose) console.log('환경변수 파일이 존재하지 않습니다. 동기화를 진행합니다.')
+      await saveSecretValues(region, key, path)
+      await updateSyncedAt(key)
+    } else if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
       if (verbose) console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
 
       await saveSecretValues(region, key, path)
@@ -60,7 +70,7 @@ async function updateSyncedAt (key) {
     (config) => config.key === key
   )
   existingConfig.syncedAt = dayjs().toISOString()
-  fs.writeFileSync(syncEnvFilePath, JSON.stringify(existingConfigs))
+  fs.writeFileSync(syncEnvFilePath, JSON.stringify(existingConfigs, null, 2))
 }
 
 async function saveSecretValues (region, SecretId, envPath) {

@@ -11,6 +11,11 @@ const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 const sync = async (options) => {
   const { verbose } = options
 
+  if (!fs.existsSync(syncEnvFilePath)) {
+    console.log('.syncenv 파일이 존재하지 않습니다. init을 먼저 실행해주세요.')
+    return
+  }
+
   if (verbose) {
     const answers = await inquirer.prompt([
       {
@@ -39,11 +44,7 @@ const sync = async (options) => {
       continue
     }
 
-    let envFile
-
-    try {
-      envFile = fs.accessSync(path, fs.constants.F_OK)
-    } catch (e) { }
+    const envFile = fs.existsSync(path)
 
     if (!envFile) {
       if (verbose) console.log('환경변수 파일이 존재하지 않습니다. 동기화를 진행합니다.')

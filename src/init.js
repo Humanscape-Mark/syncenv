@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
+
 const prompt = [
   {
     name: 'key',
@@ -35,9 +36,11 @@ const prompt = [
   }
 ]
 
-const init = async () => {
+const init = async (options) => {
+  const { verbose } = options
   const answers = await inquirer.prompt(prompt)
   let configs = []
+
   if (fs.existsSync(syncEnvFilePath)) {
     const existingConfigs = JSON.parse(
       fs.readFileSync(syncEnvFilePath, 'utf8')
@@ -47,23 +50,28 @@ const init = async () => {
     )
     if (existingConfig) {
       if (existingConfig.path === answers.path) {
-        console.log('이미 동일한 설정이 존재합니다.')
+        if (verbose) console.log('이미 동일한 설정이 존재합니다.')
         return
       } else {
-        const { confirm } = await inquirer.prompt({
-          name: 'confirm',
-          type: 'confirm',
-          message:
+        if (verbose) {
+          const { confirm } = await inquirer.prompt({
+            name: 'confirm',
+            type: 'confirm',
+            message:
             '같은 key가 존재하지만 path가 다릅니다. 추가하시겠습니까?'
-        })
-        if (!confirm) return
+          })
+          if (!confirm) return
+        }
       }
     }
+
     configs = existingConfigs
   }
+
   configs.push(answers)
+
   fs.writeFileSync(syncEnvFilePath, JSON.stringify(configs, null, 2))
-  console.log('.syncenv 파일이 업데이트 되었습니다.')
+  if (verbose) console.log('.syncenv 파일이 업데이트 되었습니다.')
 }
 
 export default init

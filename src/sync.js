@@ -8,44 +8,48 @@ import path from 'path'
 
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 
-const sync = async () => {
-  const answers = await inquirer.prompt([
-    {
-      name: 'confirm',
-      type: 'confirm',
-      message: '정말 동기화 하시겠습니까?'
-    }
-  ])
+const sync = async (options) => {
+  const { verbose } = options
 
-  if (!answers.confirm) {
-    console.log('동기화를 취소합니다.')
-    return
+  if (verbose) {
+    const answers = await inquirer.prompt([
+      {
+        name: 'confirm',
+        type: 'confirm',
+        message: '정말 동기화 하시겠습니까?'
+      }
+    ])
+
+    if (!answers.confirm) {
+      console.log('동기화를 취소합니다.')
+      return
+    }
   }
 
   const envData = JSON.parse(fs.readFileSync(syncEnvFilePath, 'utf8'))
   const syncInfo = await getSyncInfo()
 
   for (const { key, path, region, syncedAt } of envData) {
-    console.log(`\n[${key}]`)
+    if (verbose) console.log(`\n[${key}]`)
 
     const syncItem = syncInfo.find(item => item.SecretName.S === key)
 
     if (!syncItem) {
-      console.log('동기화된 Secretsmanager Key가 없습니다.')
+      if (verbose) console.log('동기화된 Secretsmanager Key가 없습니다.')
       continue
     }
 
     if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
-      console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
+      if (verbose) console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
 
       await saveSecretValues(region, key, path)
       await updateSyncedAt(key)
     } else {
-      console.log('최신 상태입니다. 동기화를 진행하지 않습니다.')
+      if (verbose) console.log('최신 상태입니다. 동기화를 진행하지 않습니다.')
     }
   }
 
-  console.log('\n동기화 완료!')
+  if (verbose) console.log('\n동기화 완료!')
 }
 
 async function updateSyncedAt (key) {

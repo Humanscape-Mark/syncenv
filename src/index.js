@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Command } from 'commander'
 
 import init from './init.js'
@@ -10,7 +12,16 @@ program
   .version('1.0.0')
   .description('AWS Secretmanager에 등록된 환경변수와 자동 동기화를 해줍니다.')
 
-program.command('init').description('새로운 환경변수 설정을 등록합니다.').action(init)
-program.command('sync').description('등록된 설정대로 동기화합니다.').action(sync)
+program
+  .command('init')
+  .description('새로운 환경변수 설정을 등록합니다.')
+  .option('-v, --verbose', '세부 로그 표시 및 단계별 진행')
+  .action(init)
+
+program
+  .command('sync')
+  .description('등록된 설정대로 동기화합니다.')
+  .option('-v, --verbose', '세부 로그 표시 및 단계별 진행')
+  .action(sync)
 
 program.parse(process.argv)

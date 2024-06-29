@@ -22,33 +22,30 @@ const sync = async () => {
     return
   }
 
-  console.log('동기화를 시작합니다.')
   const envData = JSON.parse(fs.readFileSync(syncEnvFilePath, 'utf8'))
-
-  console.log('동기화 정보를 가져옵니다.')
   const syncInfo = await getSyncInfo()
 
   for (const { key, path, region, syncedAt } of envData) {
-    console.log(`${key}의 동기화 정보를 확인합니다.`)
+    console.log(`\n[${key}]`)
 
     const syncItem = syncInfo.find(item => item.SecretName.S === key)
 
     if (!syncItem) {
-      console.log(`Secret ${key} 정보가 없습니다. DynamoDB에 추가해주세요.`)
+      console.log('동기화된 Secretsmanager Key가 없습니다.')
       continue
     }
 
     if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
-      console.log(`Secret ${key}가 업데이트 되었으므로 동기화를 진행합니다.`)
+      console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
 
       await saveSecretValues(region, key, path)
       await updateSyncedAt(key)
     } else {
-      console.log(`Secret ${key}가 최신 상태입니다. 동기화를 진행하지 않습니다.`)
+      console.log('최신 상태입니다. 동기화를 진행하지 않습니다.')
     }
   }
 
-  console.log('동기화 완료!')
+  console.log('\n동기화 완료!')
 }
 
 async function updateSyncedAt (key) {

@@ -9,7 +9,6 @@ const AWS_REGION = 'ap-northeast-2'
 const DYNAMODB_TABLE_NAME = 'syncenv'
 
 const init = async (options) => {
-  const { verbose } = options
   const accountAnswer = await inquirer.prompt([{
     name: 'account',
     type: 'list',
@@ -39,8 +38,13 @@ const init = async (options) => {
       type: 'input',
       message: 'Local에 저장될 env file의 path를 입력해주세요.',
       default: '.env',
-      validate: (value) => {
-        if (value.length) return true
+      validate: async (value) => {
+        if (value.length) {
+          if (checkExistPath(value)) {
+            return '이미 동일한 path에 대한 설정이 존재합니다. 다시 확인해주세요.'
+          }
+          return true
+        }
         return 'Local에 저장될 env file의 path를 입력해주세요.'
       }
     }
@@ -57,18 +61,16 @@ const init = async (options) => {
     )
     if (existingConfig) {
       if (existingConfig.path === answers.path) {
-        if (verbose) console.log('이미 동일한 설정이 존재합니다.')
+        console.log('이미 동일한 설정이 존재합니다.')
         return
       } else {
-        if (verbose) {
-          const { confirm } = await inquirer.prompt({
-            name: 'confirm',
-            type: 'confirm',
-            message:
-            '같은 key가 존재하지만 path가 다릅니다. 추가하시겠습니까?'
-          })
-          if (!confirm) return
-        }
+        const { confirm } = await inquirer.prompt({
+          name: 'confirm',
+          type: 'confirm',
+          message:
+            '같은 key 설정이 존재하지만 path가 다릅니다. 추가하시겠습니까?'
+        })
+        if (!confirm) return
       }
     }
 
@@ -80,7 +82,22 @@ const init = async (options) => {
   configs.push(answers)
 
   fs.writeFileSync(syncEnvFilePath, JSON.stringify(configs, null, 2))
-  if (verbose) console.log('.syncenv 파일이 업데이트 되었습니다.')
+  console.log('.syncenv 파일이 업데이트 되었습니다.')
+}
+
+const checkExistPath = (envPath) => {
+  if (fs.existsSync(syncEnvFilePath)) {
+    const existingConfigs = JSON.parse(
+      fs.readFileSync(syncEnvFilePath, 'utf8')
+    )
+    const existingConfig = existingConfigs.find(
+      (config) => config.path === envPath
+    )
+
+    if (existingConfig) {
+      return true
+    }
+  }
 }
 
 const getSyncInfo = async (account) => {

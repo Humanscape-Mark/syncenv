@@ -15,7 +15,6 @@ program
 program
   .command('init')
   .description('새로운 환경변수 설정을 등록합니다.')
-  .option('-v, --verbose', '세부 로그 표시 및 단계별 진행')
   .action(init)
 
 program

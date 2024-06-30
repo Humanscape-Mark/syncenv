@@ -10,7 +10,7 @@ const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 const AWS_REGION = 'ap-northeast-2'
 const DYNAMODB_TABLE_NAME = 'syncenv'
 
-const sync = async (options) => {
+async function sync (options) {
   const { verbose } = options
 
   if (!fs.existsSync(syncEnvFilePath)) {

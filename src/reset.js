@@ -4,7 +4,7 @@ import path from 'path'
 
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 
-const reset = async () => {
+async function reset () {
   const answers = await inquirer.prompt([
     {
       name: 'confirm',

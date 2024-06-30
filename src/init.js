@@ -8,7 +8,7 @@ const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
 const AWS_REGION = 'ap-northeast-2'
 const DYNAMODB_TABLE_NAME = 'syncenv'
 
-const init = async (options) => {
+async function init () {
   const accountAnswer = await inquirer.prompt([{
     name: 'account',
     type: 'list',
@@ -85,7 +85,7 @@ const init = async (options) => {
   console.log('.syncenv 파일이 업데이트 되었습니다.')
 }
 
-const checkExistPath = (envPath) => {
+async function checkExistPath (envPath) {
   if (fs.existsSync(syncEnvFilePath)) {
     const existingConfigs = JSON.parse(
       fs.readFileSync(syncEnvFilePath, 'utf8')
@@ -100,7 +100,7 @@ const checkExistPath = (envPath) => {
   }
 }
 
-const getSyncInfo = async (account) => {
+async function getSyncInfo (account) {
   const client = new DynamoDBClient({ region: AWS_REGION })
   const command = new ScanCommand({
     TableName: DYNAMODB_TABLE_NAME,

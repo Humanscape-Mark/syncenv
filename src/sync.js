@@ -74,13 +74,17 @@ async function updateSyncedAt (key) {
   fs.writeFileSync(syncEnvFilePath, JSON.stringify(existingConfigs, null, 2))
 }
 
-async function saveSecretValues (region, SecretId, envPath) {
+async function getSecretValues (region, SecretId) {
   const client = new SecretsManagerClient({ region })
   const command = new GetSecretValueCommand({ SecretId })
   const { SecretString } = await client.send(command)
-  const envContent = Object.entries(JSON.parse(SecretString))
-    .map(([key, value]) => `${key}=${value}`)
+  return JSON.parse(SecretString)
+}
 
+async function saveSecretValues (region, SecretId, envPath) {
+  const SescretValues = await getSecretValues(region, SecretId)
+  const envContent = Object.entries(SescretValues)
+    .map(([key, value]) => `${key}=${value}`)
     .join('\n')
   fs.writeFileSync(envPath, envContent)
 }

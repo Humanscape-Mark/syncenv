@@ -47,18 +47,27 @@ const sync = async (options) => {
     }
 
     const envFile = fs.existsSync(path)
+    let allowSync = false
 
     if (!envFile) {
       if (verbose) console.log('환경변수 파일이 존재하지 않습니다. 동기화를 진행합니다.')
-      await saveSecretValues(key, path)
-      await updateSyncedAt(key)
+      allowSync = true
+    } else if (!syncedAt) {
+      if (verbose) console.log('최초 동기화를 진행합니다.')
+      allowSync = true
     } else if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
       if (verbose) console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
-
-      await saveSecretValues(key, path)
-      await updateSyncedAt(key)
+      allowSync = true
     } else {
       if (verbose) console.log('최신 상태입니다. 동기화를 진행하지 않습니다.')
+    }
+
+    if (allowSync) {
+      const success = await saveSecretValues(key, path)
+
+      if (success) {
+        await updateSyncedAt(key)
+      }
     }
   }
 
@@ -77,18 +86,34 @@ async function updateSyncedAt (key) {
 }
 
 async function getSecretValues (SecretId) {
-  const client = new SecretsManagerClient({ region: AWS_REGION })
-  const command = new GetSecretValueCommand({ SecretId })
-  const { SecretString } = await client.send(command)
-  return JSON.parse(SecretString)
+  try {
+    const client = new SecretsManagerClient({ region: AWS_REGION })
+    const command = new GetSecretValueCommand({ SecretId })
+    const { SecretString } = await client.send(command)
+    return JSON.parse(SecretString)
+  } catch (error) {
+    console.log(
+`설정된 Secret을 받아올 수 없습니다. 아래와 같은 이유가 있을 수 있습니다.
+  - 현재 설정된 AWS Credential이 올바른지 확인해주세요.
+  - 설정된 SecretId가 올바른지 확인해주세요.
+  - 설정된 Secret이 삭제되었거나, 권한이 없는 경우입니다.
+`)
+    return {}
+  }
 }
 
 async function saveSecretValues (SecretId, envPath) {
-  const SescretValues = await getSecretValues(SecretId)
-  const envContent = Object.entries(SescretValues)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n')
-  fs.writeFileSync(envPath, envContent)
+  const SecretValues = await getSecretValues(SecretId)
+
+  if (SecretValues) {
+    const envContent = Object.entries(SecretValues)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n')
+    fs.writeFileSync(envPath, envContent)
+  } else {
+    console.log('환경변수 파일을 생성할 수 없습니다.')
+    return false
+  }
 }
 
 async function getSyncInfo () {

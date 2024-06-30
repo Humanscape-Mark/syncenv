@@ -1,44 +1,51 @@
+import { ScanCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb'
+
 import inquirer from 'inquirer'
 import fs from 'fs'
 import path from 'path'
 
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
-
-const prompt = [
-  {
-    name: 'key',
-    type: 'input',
-    message: 'AWS Secretsmanager Key를 입력해주세요.',
-    validate: (value) => {
-      if (value.length) return true
-      return 'AWS Secretsmanager Key를 입력해주세요.'
-    }
-  },
-  {
-    name: 'region',
-    type: 'input',
-    message: 'AWS Secretsmanager의 Region을 입력해주세요.',
-    default: 'ap-northeast-2',
-    validate: (value) => {
-      if (value.length) return true
-      return 'AWS Secretsmanager의 Region을 입력해주세요.'
-    }
-  },
-  {
-    name: 'path',
-    type: 'input',
-    message: 'Local에 저장될 env file의 path를 입력해주세요.',
-    default: '.env',
-    validate: (value) => {
-      if (value.length) return true
-      return 'Local에 저장될 env file의 path를 입력해주세요.'
-    }
-  }
-]
+const AWS_REGION = 'ap-northeast-2'
+const DYNAMODB_TABLE_NAME = 'syncenv'
 
 const init = async (options) => {
   const { verbose } = options
-  const answers = await inquirer.prompt(prompt)
+  const accountAnswer = await inquirer.prompt([{
+    name: 'account',
+    type: 'list',
+    message: '계정 유형을 선택해주세요.',
+    choices: ['BOX_DEV', 'BOX_PROD', 'FH_DEV', 'FH_PROD'],
+    validate: (value) => {
+      if (value.length) return true
+      return '계정 유형을 선택해주세요.'
+    }
+  }])
+
+  const secretNames = await getSyncInfo(accountAnswer.account)
+
+  const answers = await inquirer.prompt([
+    {
+      name: 'key',
+      type: 'list',
+      message: 'AWS Secretsmanager Key를 선택해주세요.',
+      choices: secretNames,
+      validate: (value) => {
+        if (value.length) return true
+        return 'AWS Secretsmanager Key를 선택해주세요.'
+      }
+    },
+    {
+      name: 'path',
+      type: 'input',
+      message: 'Local에 저장될 env file의 path를 입력해주세요.',
+      default: '.env',
+      validate: (value) => {
+        if (value.length) return true
+        return 'Local에 저장될 env file의 path를 입력해주세요.'
+      }
+    }
+  ])
+
   let configs = []
 
   if (fs.existsSync(syncEnvFilePath)) {
@@ -68,10 +75,31 @@ const init = async (options) => {
     configs = existingConfigs
   }
 
+  answers.account = accountAnswer.account
+
   configs.push(answers)
 
   fs.writeFileSync(syncEnvFilePath, JSON.stringify(configs, null, 2))
   if (verbose) console.log('.syncenv 파일이 업데이트 되었습니다.')
+}
+
+const getSyncInfo = async (account) => {
+  const client = new DynamoDBClient({ region: AWS_REGION })
+  const command = new ScanCommand({
+    TableName: DYNAMODB_TABLE_NAME,
+    FilterExpression: 'Accounts = :Accounts',
+    ExpressionAttributeValues: {
+      ':Accounts': { S: account }
+    }
+  })
+
+  try {
+    const { Items } = await client.send(command)
+    return Items.map((item) => item.SecretName.S)
+  } catch (error) {
+    console.error('DynamoDB 조회 중 오류 발생:', error)
+    return []
+  }
 }
 
 export default init

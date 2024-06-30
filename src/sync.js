@@ -7,6 +7,8 @@ import fs from 'fs'
 import path from 'path'
 
 const syncEnvFilePath = path.join(process.cwd(), '.syncenv')
+const AWS_REGION = 'ap-northeast-2'
+const DYNAMODB_TABLE_NAME = 'syncenv'
 
 const sync = async (options) => {
   const { verbose } = options
@@ -34,7 +36,7 @@ const sync = async (options) => {
   const envData = JSON.parse(fs.readFileSync(syncEnvFilePath, 'utf8'))
   const syncInfo = await getSyncInfo()
 
-  for (const { key, path, region, syncedAt } of envData) {
+  for (const { key, path, syncedAt } of envData) {
     if (verbose) console.log(`\n[${key}]`)
 
     const syncItem = syncInfo.find(item => item.SecretName.S === key)
@@ -48,12 +50,12 @@ const sync = async (options) => {
 
     if (!envFile) {
       if (verbose) console.log('환경변수 파일이 존재하지 않습니다. 동기화를 진행합니다.')
-      await saveSecretValues(region, key, path)
+      await saveSecretValues(key, path)
       await updateSyncedAt(key)
     } else if (!syncedAt || dayjs(syncItem.LastChangedDate.S) >= dayjs(syncedAt)) {
       if (verbose) console.log('최근에 업데이트 되었으므로 동기화를 진행합니다.')
 
-      await saveSecretValues(region, key, path)
+      await saveSecretValues(key, path)
       await updateSyncedAt(key)
     } else {
       if (verbose) console.log('최신 상태입니다. 동기화를 진행하지 않습니다.')
@@ -74,15 +76,15 @@ async function updateSyncedAt (key) {
   fs.writeFileSync(syncEnvFilePath, JSON.stringify(existingConfigs, null, 2))
 }
 
-async function getSecretValues (region, SecretId) {
-  const client = new SecretsManagerClient({ region })
+async function getSecretValues (SecretId) {
+  const client = new SecretsManagerClient({ region: AWS_REGION })
   const command = new GetSecretValueCommand({ SecretId })
   const { SecretString } = await client.send(command)
   return JSON.parse(SecretString)
 }
 
-async function saveSecretValues (region, SecretId, envPath) {
-  const SescretValues = await getSecretValues(region, SecretId)
+async function saveSecretValues (SecretId, envPath) {
+  const SescretValues = await getSecretValues(SecretId)
   const envContent = Object.entries(SescretValues)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n')
@@ -90,9 +92,9 @@ async function saveSecretValues (region, SecretId, envPath) {
 }
 
 async function getSyncInfo () {
-  const client = new DynamoDBClient({ region: 'ap-northeast-2' })
+  const client = new DynamoDBClient({ region: AWS_REGION })
   const command = new ScanCommand({
-    TableName: 'syncenv'
+    TableName: DYNAMODB_TABLE_NAME
   })
 
   const { Items } = await client.send(command)

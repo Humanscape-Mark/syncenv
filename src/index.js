@@ -4,6 +4,7 @@ import { Command } from 'commander'
 
 import init from './init.js'
 import sync from './sync.js'
+import reset from './reset.js'
 
 const program = new Command()
 
@@ -22,5 +23,10 @@ program
   .description('등록된 설정대로 동기화합니다.')
   .option('-v, --verbose', '세부 로그 표시 및 단계별 진행')
   .action(sync)
+
+program
+  .command('reset')
+  .description('.syncenv 파일을 삭제합니다.')
+  .action(reset)
 
 program.parse(process.argv)

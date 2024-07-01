@@ -14,6 +14,8 @@ npm install -g whitehander/syncenv
 
 ## 사용
 
+### 직접 사용하기
+
 ```
 $ syncenv
 ```
@@ -30,5 +32,16 @@ Options:
 Commands:
   init [options]  새로운 환경변수 설정을 등록합니다.
   sync [options]  등록된 설정대로 동기화합니다.
+  reset           .syncenv 파일을 삭제합니다.
   help [command]  display help for command
+```
+
+### 스크립트에 끼워넣기
+
+package.json 파일의 pre-scripts로 설정하기
+https://docs.npmjs.com/cli/v10/using-npm/scripts
+
+```
+"predev": "syncenv sync"
+"prestart": "syncenv sync"
 ```

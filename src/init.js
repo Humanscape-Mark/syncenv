@@ -13,7 +13,7 @@ async function init () {
     name: 'account',
     type: 'list',
     message: '계정 유형을 선택해주세요.',
-    choices: ['BOX_DEV', 'BOX_PROD', 'FH'],
+    choices: ['BOX_DEV', 'FH'],
     validate: (value) => {
       if (value.length) return true
       return '계정 유형을 선택해주세요.'

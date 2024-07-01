@@ -13,7 +13,7 @@ async function init () {
     name: 'account',
     type: 'list',
     message: '계정 유형을 선택해주세요.',
-    choices: ['BOX_DEV', 'BOX_PROD', 'FH_DEV', 'FH_PROD'],
+    choices: ['BOX_DEV', 'BOX_PROD', 'FH'],
     validate: (value) => {
       if (value.length) return true
       return '계정 유형을 선택해주세요.'
@@ -85,7 +85,7 @@ async function init () {
   console.log('.syncenv 파일이 업데이트 되었습니다.')
 }
 
-async function checkExistPath (envPath) {
+function checkExistPath (envPath) {
   if (fs.existsSync(syncEnvFilePath)) {
     const existingConfigs = JSON.parse(
       fs.readFileSync(syncEnvFilePath, 'utf8')
@@ -96,7 +96,11 @@ async function checkExistPath (envPath) {
 
     if (existingConfig) {
       return true
+    } else {
+      return false
     }
+  } else {
+    return false
   }
 }
 

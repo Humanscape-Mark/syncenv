@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+import fs from 'fs'
 
 import init from './init.js'
 import sync from './sync.js'
 import reset from './reset.js'
 
 const program = new Command()
+const version = JSON.parse(
+  fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+).version
 
 program
   .name('Sync Env a.k.a 환경관리공단')
-  .version('1.1.5')
+  .version(version)
   .description('AWS Secretmanager에 등록된 환경변수와 자동 동기화를 해줍니다.')
 
 program

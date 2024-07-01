@@ -10,7 +10,7 @@ const program = new Command()
 
 program
   .name('Sync Env a.k.a 환경관리공단')
-  .version('1.0.0')
+  .version('1.1.5')
   .description('AWS Secretmanager에 등록된 환경변수와 자동 동기화를 해줍니다.')
 
 program
